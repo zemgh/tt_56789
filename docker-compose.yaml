@@ -1,0 +1,37 @@
+services:
+  postgres:
+      image: postgres:alpine
+      restart: always
+      ports:
+        - 5432:5432
+      environment:
+        - POSTGRES_DB=tron_db
+        - POSTGRES_USER=tron_db_user
+        - POSTGRES_PASSWORD=tron_db_password
+      healthcheck:
+        test: pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB
+        interval: 3s
+        timeout: 5s
+        retries: 5
+        start_period: 3s
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - 6379:6379
+
+
+  api:
+    build: .
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    environment:
+      DB_URL: tron_db_user:tron_db_password@postgres:5432/tron_db
+      TRON_API_URL: https://api.shasta.trongrid.io/wallet
+      TRON_API_KEY: d6a72e08-d52a-4fd5-b9c1-048c4d0354b7
+      QPS_LIMIT: 15
